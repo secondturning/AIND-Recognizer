@@ -80,8 +80,8 @@ class SelectorBIC(ModelSelector):
             try:
                 hmm_model = self.base_model(states)
                 log_likelihood = hmm_model.score(self.X, self.lengths)
-                data_points = sum(self.lengths)
-                free_params = (states ** 2) + (2*states*data_points) - 1
+                data_points, no_of_features = self.X.shape
+                free_params = (states ** 2) + (2*states*no_of_features) - 1
                 score = (-2 * log_likelihood) + (free_params * np.log(data_points))
                 scores.append(tuple([hmm_model, score]))
             except Exception as e:
@@ -144,14 +144,15 @@ class SelectorCV(ModelSelector):
         scores = []
 
         for states in range(self.min_n_components, self.max_n_components + 1):
-            hmm_model = self.base_model(states)
             try:
                 if len(self.sequences) > 2:
                     for train_index, test_index in k_fold.split(self.sequences):
                         self.X, self.lengths = combine_sequences(train_index, self.sequences)
+                        hmm_model = self.base_model(states)
                         X_test, lengths_test = combine_sequences(test_index, self.sequences)
                         log_likelihood = hmm_model.score(X_test, lengths_test)
                 else:
+                    hmm_model = self.base_model(states)
                     log_likelihood = hmm_model.score(self.X, self.lengths)
 
                 log_likelihoods.append(log_likelihood)
